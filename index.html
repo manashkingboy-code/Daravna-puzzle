@@ -1,0 +1,1854 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+
+<title>Vivek Dev - Andheri Haveli</title>
+
+<style>
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
+
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#000;
+  font-family:Arial,sans-serif;
+  touch-action:none;
+}
+
+#game{
+  position:fixed;
+  inset:0;
+}
+
+canvas{
+  display:block;
+}
+
+#hud{
+  position:fixed;
+  top:12px;
+  left:0;
+  right:0;
+  z-index:10;
+  color:white;
+  text-align:center;
+  text-shadow:0 2px 8px #000;
+  pointer-events:none;
+}
+
+#title{
+  font-size:19px;
+  font-weight:bold;
+}
+
+#status{
+  margin-top:6px;
+  font-size:14px;
+}
+
+#hint{
+  position:fixed;
+  left:50%;
+  bottom:125px;
+  transform:translateX(-50%);
+  z-index:10;
+  padding:8px 12px;
+  color:white;
+  background:#000b;
+  border-radius:10px;
+  text-align:center;
+  font-size:13px;
+  max-width:85%;
+  pointer-events:none;
+}
+
+#joystick{
+  position:fixed;
+  left:20px;
+  bottom:25px;
+  width:125px;
+  height:125px;
+  border-radius:50%;
+  background:#ffffff12;
+  border:2px solid #ffffff55;
+  z-index:20;
+}
+
+#stick{
+  position:absolute;
+  left:34px;
+  top:34px;
+  width:54px;
+  height:54px;
+  border-radius:50%;
+  background:#ffffff40;
+  border:2px solid #ffffff66;
+}
+
+#look{
+  position:fixed;
+  right:0;
+  top:0;
+  width:68%;
+  height:72%;
+  z-index:15;
+}
+
+.control{
+  position:fixed;
+  z-index:25;
+  border-radius:50%;
+  color:white;
+  background:#111b;
+  border:2px solid #ffffff55;
+}
+
+#action{
+  right:20px;
+  bottom:28px;
+  width:80px;
+  height:80px;
+}
+
+#flash{
+  right:115px;
+  bottom:43px;
+  width:58px;
+  height:58px;
+  font-size:20px;
+}
+
+.screen{
+  position:fixed;
+  inset:0;
+  z-index:50;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  color:white;
+  background:
+    radial-gradient(circle,#181818,#000 75%);
+}
+
+.panel{
+  width:90%;
+  max-width:430px;
+  padding:26px;
+  border-radius:18px;
+  background:#080808ee;
+  border:1px solid #ffffff33;
+  box-shadow:0 0 50px #000;
+}
+
+.panel h1{
+  margin-top:0;
+}
+
+.panel p{
+  line-height:1.5;
+  color:#ccc;
+}
+
+.start{
+  padding:13px 25px;
+  border:0;
+  border-radius:9px;
+  font-weight:bold;
+}
+
+#gameOver,
+#win{
+  display:none;
+}
+
+#scare{
+  position:fixed;
+  inset:0;
+  z-index:45;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background:#000d;
+}
+
+#scareFace{
+  font-size:min(35vw,230px);
+  filter:drop-shadow(0 0 30px red);
+  animation:shake .08s infinite;
+}
+
+@keyframes shake{
+  0%{transform:translate(0)}
+  50%{transform:translate(8px,-5px)}
+  100%{transform:translate(-7px,5px)}
+}
+
+#puzzle{
+  position:fixed;
+  inset:0;
+  z-index:40;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background:#000b;
+}
+
+.puzzleBox{
+  width:290px;
+  padding:22px;
+  border-radius:15px;
+  color:white;
+  background:#0b0b0b;
+  text-align:center;
+  border:1px solid #ffffff44;
+}
+
+#code{
+  width:170px;
+  padding:12px;
+  background:#151515;
+  color:white;
+  border:1px solid #777;
+  border-radius:8px;
+  text-align:center;
+  font-size:22px;
+  letter-spacing:7px;
+}
+
+#unlock{
+  margin-top:12px;
+  padding:10px 20px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="game"></div>
+
+<div id="hud">
+  <div id="title">🏚️ VIVEK DEV — ANDHERI HAVELI</div>
+  <div id="status">पुरानी हवेली से बाहर निकलो...</div>
+</div>
+
+<div id="hint">
+  🔦 हवेली को खोजो और चाबी ढूँढो
+</div>
+
+<div id="joystick">
+  <div id="stick"></div>
+</div>
+
+<div id="look"></div>
+
+<button id="action" class="control">
+ACTION
+</button>
+
+<button id="flash" class="control">
+🔦
+</button>
+
+
+<!-- START -->
+
+<div id="startScreen" class="screen">
+
+<div class="panel">
+
+<h1>🏚️ ANDHERI HAVELI</h1>
+
+<p>
+रात में तुम एक सुनसान हवेली में फँस गए हो।
+<br><br>
+
+🔦 अँधेरे कमरों को खोजो<br>
+🔑 पुरानी चाबी ढूँढो<br>
+🧩 clues से दरवाज़ा खोलो<br>
+👻 सावधान — कोई तुम्हें देख रहा है...
+</p>
+
+<button id="start" class="start">
+HAVeli में प्रवेश करो
+</button>
+
+</div>
+
+</div>
+
+
+<!-- PUZZLE -->
+
+<div id="puzzle">
+
+<div class="puzzleBox">
+
+<h2>🔐 पुराना ताला</h2>
+
+<p>
+तीन clues से मिला तीन-अंकों का code डालो।
+</p>
+
+<input
+id="code"
+maxlength="3"
+inputmode="numeric"
+placeholder="•••"
+>
+
+<br>
+
+<button id="unlock">
+दरवाज़ा खोलो
+</button>
+
+</div>
+
+</div>
+
+
+<!-- SCARE -->
+
+<div id="scare">
+
+<div id="scareFace">
+👹
+</div>
+
+</div>
+
+
+<!-- GAME OVER -->
+
+<div id="gameOver" class="screen">
+
+<div class="panel">
+
+<h1>😨 GAME OVER</h1>
+
+<p>
+वह तुम्हें ढूँढ चुकी थी।
+</p>
+
+<button
+class="start"
+onclick="location.reload()">
+फिर से खेलें
+</button>
+
+</div>
+
+</div>
+
+
+<!-- WIN -->
+
+<div id="win" class="screen">
+
+<div class="panel">
+
+<h1>🎉 ESCAPED!</h1>
+
+<p>
+तुम Andheri Haveli से बाहर निकल गए।
+</p>
+
+<button
+class="start"
+onclick="location.reload()">
+फिर से खेलें
+</button>
+
+</div>
+
+</div>
+
+
+<!-- THREE -->
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<script>
+
+if(typeof THREE==="undefined"){
+
+document.body.innerHTML=
+"<div style='height:100vh;background:#000;color:white;display:flex;align-items:center;justify-content:center;text-align:center;font-family:Arial;padding:30px'>"+
+"<div><h2>3D Engine Load नहीं हुआ</h2>"+
+"<p>Internet ON करके दोबारा खोलें।</p></div></div>";
+
+}else{
+
+
+/* =================================
+   SCENE
+================================= */
+
+const scene=
+new THREE.Scene();
+
+scene.background=
+new THREE.Color(0x010101);
+
+scene.fog=
+new THREE.Fog(
+0x010101,
+4,
+34
+);
+
+
+const camera=
+new THREE.PerspectiveCamera(
+72,
+innerWidth/innerHeight,
+.05,
+100
+);
+
+camera.position.set(
+0,
+1.65,
+10
+);
+
+
+const renderer=
+new THREE.WebGLRenderer({
+antialias:true
+});
+
+renderer.setSize(
+innerWidth,
+innerHeight
+);
+
+renderer.setPixelRatio(
+Math.min(devicePixelRatio,1.5)
+);
+
+renderer.shadowMap.enabled=true;
+
+document
+.getElementById("game")
+.appendChild(renderer.domElement);
+
+
+/* =================================
+   LIGHTS
+================================= */
+
+scene.add(
+new THREE.HemisphereLight(
+0x353545,
+0x080503,
+.38
+)
+);
+
+
+const flashlight=
+new THREE.SpotLight(
+0xfff3d0,
+5,
+25,
+Math.PI/6,
+.65,
+1
+);
+
+camera.add(flashlight);
+
+scene.add(camera);
+
+
+const redLight=
+new THREE.PointLight(
+0xff0011,
+2.5,
+10
+);
+
+redLight.position.set(
+0,
+3,
+-13
+);
+
+scene.add(redLight);
+
+
+/* =================================
+   MATERIALS
+================================= */
+
+const wallMat=
+new THREE.MeshStandardMaterial({
+color:0x242124,
+roughness:1
+});
+
+const floorMat=
+new THREE.MeshStandardMaterial({
+color:0x0e0d0c,
+roughness:1
+});
+
+const woodMat=
+new THREE.MeshStandardMaterial({
+color:0x321b12,
+roughness:.9
+});
+
+const darkMat=
+new THREE.MeshStandardMaterial({
+color:0x141014
+});
+
+const metalMat=
+new THREE.MeshStandardMaterial({
+color:0x777777,
+metalness:.7,
+roughness:.3
+});
+
+
+/* =================================
+   BOX
+================================= */
+
+function box(
+x,y,z,
+sx,sy,sz,
+mat
+){
+
+const m=
+new THREE.Mesh(
+new THREE.BoxGeometry(
+sx,sy,sz
+),
+mat
+);
+
+m.position.set(
+x,y,z
+);
+
+m.castShadow=true;
+m.receiveShadow=true;
+
+scene.add(m);
+
+return m;
+
+}
+
+
+/* =================================
+   HOUSE
+================================= */
+
+box(
+0,-.1,0,
+30,.2,30,
+floorMat
+);
+
+box(
+0,3,-15,
+30,6,.4,
+wallMat
+);
+
+box(
+-15,3,0,
+.4,6,30,
+wallMat
+);
+
+box(
+15,3,0,
+.4,6,30,
+wallMat
+);
+
+box(
+0,6,0,
+30,.3,30,
+wallMat
+);
+
+
+/* rooms */
+
+box(
+-5,3,-5,
+.35,6,10,
+wallMat
+);
+
+box(
+5,3,2,
+.35,6,12,
+wallMat
+);
+
+box(
+-5,3,7,
+10,.35,.35,
+wallMat
+);
+
+
+/* =================================
+   DOOR
+================================= */
+
+const exitDoor=
+box(
+0,
+2.5,
+-14.7,
+3.8,
+5,
+.45,
+woodMat
+);
+
+
+const handle=
+new THREE.Mesh(
+new THREE.SphereGeometry(
+.13,
+16,
+16
+),
+metalMat
+);
+
+handle.position.set(
+1.1,
+2.3,
+-14.4
+);
+
+scene.add(handle);
+
+
+/* =================================
+   FURNITURE
+================================= */
+
+/* table */
+
+box(
+-9,.7,-7,
+3,.3,1.7,
+woodMat
+);
+
+
+/* cabinet */
+
+box(
+9,1.5,-8,
+2.3,3,1.2,
+woodMat
+);
+
+
+/* bed */
+
+box(
+-9,.55,3,
+4.5,.35,2,
+woodMat
+);
+
+box(
+-9,.9,3,
+4.2,.5,1.8,
+darkMat
+);
+
+
+/* chest */
+
+const chest=
+box(
+8,.65,7,
+2.2,1.3,1.5,
+woodMat
+);
+
+box(
+8,.65,6.2,
+.35,.45,.12,
+metalMat
+);
+
+
+/* =================================
+   CANDLES
+================================= */
+
+const candleLights=[];
+
+function candle(x,z){
+
+const body=
+new THREE.Mesh(
+new THREE.CylinderGeometry(
+.12,.12,.8,12
+),
+new THREE.MeshStandardMaterial({
+color:0xd8ceb3
+})
+);
+
+body.position.set(
+x,.4,z
+);
+
+scene.add(body);
+
+
+const light=
+new THREE.PointLight(
+0xff9933,
+1.5,
+5
+);
+
+light.position.set(
+x,1,z
+);
+
+scene.add(light);
+
+candleLights.push(light);
+
+}
+
+candle(-9,-7);
+candle(9,-8);
+candle(-8,5);
+candle(8,8);
+
+
+/* =================================
+   CLUES
+================================= */
+
+const clues=[
+{x:-8,y:1.3,z:-7,n:"4"},
+{x:8,y:2.8,z:-7,n:"2"},
+{x:-9,y:1.3,z:3,n:"7"}
+];
+
+const found=[
+false,
+false,
+false
+];
+
+
+function makeClue(c){
+
+const canvas=
+document.createElement("canvas");
+
+canvas.width=256;
+canvas.height=128;
+
+const ctx=
+canvas.getContext("2d");
+
+ctx.fillStyle="#111";
+ctx.fillRect(
+0,0,256,128
+);
+
+ctx.fillStyle="#ddd";
+
+ctx.font=
+"bold 80px Arial";
+
+ctx.textAlign="center";
+
+ctx.fillText(
+c.n,
+128,
+90
+);
+
+const texture=
+new THREE.CanvasTexture(
+canvas
+);
+
+const mat=
+new THREE.MeshBasicMaterial({
+map:texture
+});
+
+const mesh=
+new THREE.Mesh(
+new THREE.PlaneGeometry(
+1.2,.6
+),
+mat
+);
+
+mesh.position.set(
+c.x,
+c.y,
+c.z
+);
+
+scene.add(mesh);
+
+return mesh;
+
+}
+
+const clueMeshes=
+clues.map(makeClue);
+
+
+/* =================================
+   WITCH
+================================= */
+
+const witch=
+new THREE.Group();
+
+const witchMat=
+new THREE.MeshStandardMaterial({
+color:0x090909,
+roughness:1
+});
+
+
+/* body */
+
+const body=
+new THREE.Mesh(
+new THREE.CylinderGeometry(
+.45,
+.8,
+2.2,
+12
+),
+witchMat
+);
+
+body.position.y=1.1;
+
+witch.add(body);
+
+
+/* head */
+
+const head=
+new THREE.Mesh(
+new THREE.SphereGeometry(
+.42,
+16,
+16
+),
+new THREE.MeshStandardMaterial({
+color:0x5a4a4a
+})
+);
+
+head.position.y=2.45;
+
+witch.add(head);
+
+
+/* hair */
+
+const hair=
+new THREE.Mesh(
+new THREE.ConeGeometry(
+.65,
+1.5,
+16
+),
+new THREE.MeshStandardMaterial({
+color:0x050505
+})
+);
+
+hair.position.y=2.65;
+
+witch.add(hair);
+
+
+/* eyes */
+
+function eye(x){
+
+const e=
+new THREE.Mesh(
+new THREE.SphereGeometry(
+.055,
+8,
+8
+),
+new THREE.MeshBasicMaterial({
+color:0xff0000
+})
+);
+
+e.position.set(
+x,
+2.48,
+-.39
+);
+
+witch.add(e);
+
+}
+
+eye(-.14);
+eye(.14);
+
+
+/* dress */
+
+const dress=
+new THREE.Mesh(
+new THREE.ConeGeometry(
+1.0,
+1.7,
+16
+),
+new THREE.MeshStandardMaterial({
+color:0x111111
+})
+);
+
+dress.position.y=.55;
+
+witch.add(dress);
+
+
+witch.position.set(
+-9,
+0,
+-10
+);
+
+scene.add(witch);
+
+
+/* witch hidden initially */
+
+witch.visible=false;
+
+
+/* =================================
+   PLAYER
+================================= */
+
+const keys={
+w:false,
+a:false,
+s:false,
+d:false
+};
+
+addEventListener(
+"keydown",
+e=>{
+
+const k=
+e.key.toLowerCase();
+
+if(k in keys)
+keys[k]=true;
+
+if(k==="e")
+action();
+
+}
+);
+
+addEventListener(
+"keyup",
+e=>{
+
+const k=
+e.key.toLowerCase();
+
+if(k in keys)
+keys[k]=false;
+
+}
+);
+
+
+/* =================================
+   JOYSTICK
+================================= */
+
+const joystick=
+document.getElementById(
+"joystick"
+);
+
+const stick=
+document.getElementById(
+"stick"
+);
+
+let joyX=0;
+let joyY=0;
+let joyID=null;
+
+
+function setJoystick(
+x,
+y
+){
+
+const r=
+joystick.getBoundingClientRect();
+
+const cx=
+r.left+r.width/2;
+
+const cy=
+r.top+r.height/2;
+
+let dx=x-cx;
+let dy=y-cy;
+
+const max=
+r.width/2-30;
+
+const d=
+Math.sqrt(
+dx*dx+
+dy*dy
+);
+
+if(d>max){
+
+dx=
+dx/d*max;
+
+dy=
+dy/d*max;
+
+}
+
+joyX=dx/max;
+joyY=dy/max;
+
+stick.style.transform=
+"translate("+
+dx+"px,"+
+dy+"px)";
+
+}
+
+
+function resetJoystick(){
+
+joyX=0;
+joyY=0;
+joyID=null;
+
+stick.style.transform=
+"translate(0,0)";
+
+}
+
+
+joystick.addEventListener(
+"touchstart",
+e=>{
+
+e.preventDefault();
+
+const t=
+e.changedTouches[0];
+
+joyID=t.identifier;
+
+setJoystick(
+t.clientX,
+t.clientY
+);
+
+},
+{passive:false}
+);
+
+
+joystick.addEventListener(
+"touchmove",
+e=>{
+
+e.preventDefault();
+
+for(
+const t of e.changedTouches
+){
+
+if(
+t.identifier===joyID
+){
+
+setJoystick(
+t.clientX,
+t.clientY
+);
+
+}
+
+}
+
+},
+{passive:false}
+);
+
+
+joystick.addEventListener(
+"touchend",
+resetJoystick
+);
+
+
+/* =================================
+   LOOK
+================================= */
+
+const look=
+document.getElementById(
+"look"
+);
+
+let looking=false;
+
+let lx=0;
+let ly=0;
+
+
+look.addEventListener(
+"touchstart",
+e=>{
+
+const t=
+e.touches[0];
+
+looking=true;
+
+lx=t.clientX;
+ly=t.clientY;
+
+},
+{passive:false}
+);
+
+
+look.addEventListener(
+"touchmove",
+e=>{
+
+if(!looking)
+return;
+
+e.preventDefault();
+
+const t=
+e.touches[0];
+
+const dx=
+t.clientX-lx;
+
+const dy=
+t.clientY-ly;
+
+lx=t.clientX;
+ly=t.clientY;
+
+camera.rotation.y-=
+dx*.004;
+
+camera.rotation.x-=
+dy*.003;
+
+camera.rotation.x=
+Math.max(
+-1.3,
+Math.min(
+1.3,
+camera.rotation.x
+)
+);
+
+},
+{passive:false}
+);
+
+
+look.addEventListener(
+"touchend",
+()=>{
+looking=false;
+}
+);
+
+
+/* =================================
+   COLLISION
+================================= */
+
+function blocked(
+x,
+z
+){
+
+if(
+Math.abs(x)>13.4 ||
+Math.abs(z)>13.4
+)
+return true;
+
+
+/* walls */
+
+if(
+Math.abs(x+5)<.5 &&
+z>-10 &&
+z<-.3
+)
+return true;
+
+
+if(
+Math.abs(x-5)<.5 &&
+z>-4 &&
+z<8
+)
+return true;
+
+
+/* table */
+
+if(
+Math.abs(x+9)<2 &&
+Math.abs(z+7)<1.3
+)
+return true;
+
+
+/* cabinet */
+
+if(
+Math.abs(x-9)<1.5 &&
+Math.abs(z+8)<1
+)
+return true;
+
+
+/* bed */
+
+if(
+Math.abs(x+9)<2.5 &&
+Math.abs(z-3)<1.3
+)
+return true;
+
+
+return false;
+
+}
+
+
+/* =================================
+   MOVEMENT
+================================= */
+
+function move(){
+
+let f=0;
+let s=0;
+
+if(keys.w)f++;
+if(keys.s)f--;
+
+if(keys.a)s--;
+if(keys.d)s++;
+
+f-=joyY;
+s+=joyX;
+
+
+const len=
+Math.sqrt(
+f*f+s*s
+);
+
+if(len>1){
+
+f/=len;
+s/=len;
+
+}
+
+
+const speed=.075;
+
+
+const forward=
+new THREE.Vector3(
+0,0,-1
+);
+
+forward.applyQuaternion(
+camera.quaternion
+);
+
+forward.y=0;
+forward.normalize();
+
+
+const right=
+new THREE.Vector3(
+1,0,0
+);
+
+right.applyQuaternion(
+camera.quaternion
+);
+
+right.y=0;
+right.normalize();
+
+
+const dx=
+(
+forward.x*f+
+right.x*s
+)*speed;
+
+
+const dz=
+(
+forward.z*f+
+right.z*s
+)*speed;
+
+
+const nx=
+camera.position.x+dx;
+
+const nz=
+camera.position.z+dz;
+
+
+if(
+!blocked(
+nx,
+camera.position.z
+)
+)
+camera.position.x=nx;
+
+
+if(
+!blocked(
+camera.position.x,
+nz
+)
+)
+camera.position.z=nz;
+
+
+camera.position.y=1.65;
+
+}
+
+
+/* =================================
+   GAME STATE
+================================= */
+
+let started=false;
+let keyFound=false;
+let cluesFound=0;
+let witchActive=false;
+let scareTimer=0;
+let escaped=false;
+
+
+/* =================================
+   SCARE
+================================= */
+
+function scare(){
+
+if(scareTimer>0||escaped)
+return;
+
+scareTimer=4;
+
+document
+.getElementById("scare")
+.style.display=
+"flex";
+
+if(navigator.vibrate){
+
+navigator.vibrate([
+100,50,150
+]);
+
+}
+
+setTimeout(
+()=>{
+
+document
+.getElementById("scare")
+.style.display=
+"none";
+
+},
+850
+);
+
+}
+
+
+/* =================================
+   ACTION
+================================= */
+
+function action(){
+
+if(!started)
+return;
+
+
+/* door */
+
+if(
+camera.position.distanceTo(
+exitDoor.position
+)<4.5
+){
+
+if(!keyFound){
+
+document
+.getElementById("status")
+.innerText=
+"🚪 दरवाज़ा बंद है। पहले चाबी खोजो।";
+
+scare();
+
+}else{
+
+document
+.getElementById("puzzle")
+.style.display=
+"flex";
+
+}
+
+return;
+
+}
+
+
+/* chest */
+
+if(
+camera.position.distanceTo(
+chest.position
+)<3
+){
+
+keyFound=true;
+
+document
+.getElementById("status")
+.innerText=
+"🔑 चाबी मिल गई! अब तीन clues खोजो।";
+
+document
+.getElementById("hint")
+.innerText=
+"🔍 हवेली में 3 hidden numbers खोजो";
+
+witchActive=true;
+witch.visible=true;
+
+return;
+
+}
+
+
+/* clues */
+
+for(
+let i=0;
+i<clues.length;
+i++
+){
+
+const c=clues[i];
+
+const distance=
+camera.position.distanceTo(
+new THREE.Vector3(
+c.x,
+c.y,
+c.z
+)
+);
+
+if(
+distance<2.5 &&
+!found[i]
+){
+
+found[i]=true;
+
+cluesFound++;
+
+clueMeshes[i]
+.material
+.opacity=.35;
+
+document
+.getElementById("status")
+.innerText=
+"🔢 Clue "+
+c.n+
+" मिला — "+
+cluesFound+
+"/3";
+
+
+if(
+cluesFound===3
+){
+
+document
+.getElementById("hint")
+.innerText=
+"🔐 Code तैयार है";
+
+}
+
+return;
+
+}
+
+}
+
+
+/* random scare */
+
+if(
+Math.random()<.28
+)
+scare();
+
+}
+
+
+/* =================================
+   BUTTONS
+================================= */
+
+document
+.getElementById("action")
+.onclick=action;
+
+
+document
+.getElementById("action")
+.ontouchstart=
+e=>{
+e.preventDefault();
+action();
+};
+
+
+document
+.getElementById("flash")
+.onclick=
+function(){
+
+flashlight.visible=
+!flashlight.visible;
+
+this.innerText=
+flashlight.visible
+?"🔦"
+:"⚫";
+
+};
+
+
+/* start */
+
+document
+.getElementById("start")
+.onclick=
+function(){
+
+started=true;
+
+document
+.getElementById("startScreen")
+.style.display=
+"none";
+
+};
+
+
+/* =================================
+   PUZZLE
+================================= */
+
+document
+.getElementById("unlock")
+.onclick=
+function(){
+
+const value=
+document
+.getElementById("code")
+.value;
+
+
+if(
+value==="427"
+){
+
+escaped=true;
+
+document
+.getElementById("puzzle")
+.style.display=
+"none";
+
+exitDoor
+.material
+.color
+.set(0x125d2b);
+
+document
+.getElementById("win")
+.style.display=
+"flex";
+
+}else{
+
+document
+.getElementById("code")
+.value="";
+
+scare();
+
+document
+.getElementById("status")
+.innerText=
+"❌ गलत code!";
+
+}
+
+};
+
+
+/* =================================
+   WITCH AI
+================================= */
+
+function updateWitch(){
+
+if(!witchActive)
+return;
+
+
+const player=
+camera.position;
+
+
+/* दूरी */
+
+const distance=
+witch.position.distanceTo(
+player
+);
+
+
+/* धीरे-धीरे player की तरफ */
+
+if(
+distance>2.2 &&
+distance<20
+){
+
+const direction=
+new THREE.Vector3()
+.subVectors(
+player,
+witch.position
+);
+
+direction.y=0;
+
+direction.normalize();
+
+
+/*
+  शुरुआत में धीमी,
+  फिर थोड़ी तेज।
+*/
+
+const speed=
+distance<8
+?.026
+:.012;
+
+
+witch.position.add(
+direction.multiplyScalar(speed)
+);
+
+
+/* player की ओर देखना */
+
+witch.lookAt(
+player.x,
+witch.position.y,
+player.z
+);
+
+}
+
+
+/* बहुत पास */
+
+if(
+distance<1.7
+){
+
+document
+.getElementById("gameOver")
+.style.display=
+"flex";
+
+started=false;
+
+}
+
+}
+
+
+/* =================================
+   ANIMATION
+================================= */
+
+const clock=
+new THREE.Clock();
+
+
+function animate(){
+
+requestAnimationFrame(
+animate
+);
+
+move();
+
+updateWitch();
+
+
+/* candle flicker */
+
+for(
+let i=0;
+i<candleLights.length;
+i++
+){
+
+candleLights[i].intensity=
+1.2+
+Math.sin(
+clock.elapsedTime*8+i
+)*.35;
+
+}
+
+
+/* red light */
+
+redLight.intensity=
+2.3+
+Math.sin(
+clock.elapsedTime*2
+)*.7;
+
+
+if(scareTimer>0)
+scareTimer-=.016;
+
+
+renderer.render(
+scene,
+camera
+);
+
+}
+
+
+animate();
+
+
+/* resize */
+
+addEventListener(
+"resize",
+()=>{
+
+camera.aspect=
+innerWidth/
+innerHeight;
+
+camera.updateProjectionMatrix();
+
+renderer.setSize(
+innerWidth,
+innerHeight
+);
+
+}
+);
+
+}
+
+</script>
+
+</body>
+  </html>
